@@ -23,7 +23,7 @@ Theta2 = reshape(nn_params((1 + (hidden_layer_size * (input_layer_size + 1))):en
                  num_labels, (hidden_layer_size + 1));
 
 % Setup some useful variables
-m = size(X, 1);
+m = size(X, 1); %Nb images.
          
 % You need to return the following variables correctly 
 J = 0;
@@ -63,10 +63,48 @@ Theta2_grad = zeros(size(Theta2));
 %
 
 
+y_recoded = (y == 1:1:num_labels);
+a_1 = [ones(m, 1) X];
+z_2 = a_1*Theta1';
+a_2 = [ones(m, 1) sigmoid(z_2)];
+h_theta = sigmoid(a_2*Theta2'); % 5000x10 matrix.
+
+J = (1/m)*( sum( sum(-log(h_theta).*y_recoded - log(1 - h_theta).*(1-y_recoded))));
+
+Theta1_red = Theta1;
+Theta1_red(:,1) = 0;
+Theta2_red = Theta2;
+Theta2_red(:,1) = 0;
+reg_part = (lambda/(2*m))*(sum(sum(Theta1_red.^2))+sum(sum(Theta2_red.^2)));
+
+J = J + reg_part;
 
 
+%Part 2
+gDelta_1 = zeros(size(Theta1)); % 25x401
+gDelta_2 = zeros(size(Theta2)); % 10x26
 
+for i=1:m,
+  a_1 = X(i,:)'; % 1x400
+  a_2 = sigmoid(Theta1*[1 ; a_1]);% 1x25
+  a_3 = sigmoid(Theta2*[1 ; a_2]);% 1x10
+  
+  delta_3 = a_3 - y_recoded(i,:)';% 1x10
+  delta_2 = (Theta2'*delta_3).*[1 ; a_2].*(1-[1 ; a_2]);% 1x26
+  delta_2(1,:) = []; %1x25
+  
+  gDelta_2 = gDelta_2 + delta_3*[1 ; a_2]'; % 10x26
+  gDelta_1 = gDelta_1 + delta_2*[1 ; a_1]'; % 25x401
+end
 
+reg_part1 = lambda*Theta1;
+reg_part1(:,1)=zeros(size(reg_part1, 1), 1);
+
+reg_part2 = lambda*Theta2;
+reg_part2(:,1)=zeros(size(reg_part2, 1), 1);
+%res
+Theta1_grad = (1/m)*(gDelta_1 + reg_part1);
+Theta2_grad = (1/m)*(gDelta_2 + reg_part2);
 
 
 
